@@ -175,8 +175,8 @@ export def AutoPairsInsert(key: string): string
         endif
     endfor
 
-    if !!get(g:, 'AutoPairsFlyMode', 0) && key =~ '\v[\}\]\)]'
-        if search(key, 'We')
+	if get(g:, 'AutoPairsFlyMode', 0) != 0 && key =~ '\v[\}\]\)]'
+        if search(key, 'We') > 0
             return "\<Right>"
         endif
     endif
