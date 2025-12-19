@@ -265,7 +265,7 @@ export def AutoPairsMoveCharacter(key: string): string
 	return "\<DEL>\<ESC>:call search(" .. "'" .. escaped_key .. "'" .. ")\<CR>a" .. c .. "\<LEFT>"
 enddef
 
-export def AutoPairsBackInsert()
+export def AutoPairsBackInsert(): string
 	const pair = b:autopairs_saved_pair[0]
 	const pos  = b:autopairs_saved_pair[1]
 	call setpos('.', pos)
@@ -349,7 +349,8 @@ def AutoPairsInit()
     b:AutoPairs = get(b:, 'AutoPairs', autopair#AutoPairsDefaultPairs())
 
     b:autopairs_return_pos = 0
-    b:autopairs_saved_pair = [0, 0]
+	# [char, [bufnum, lnum, col, off]]
+	b:autopairs_saved_pair = ['', [0, 0, 0, 0]]
     b:AutoPairsList = []
 
     for [open, close_full] in items(b:AutoPairs)
