@@ -61,7 +61,7 @@ def g:AutoPairsDefine(pairs: dict<string>, ...remove_list: list<list<string>>): 
     return r
 enddef
 
-def g:AutoPairsToggle()
+def g:AutoPairsToggle(): string
 	return autopair#AutoPairsToggle()
 enddef
 
