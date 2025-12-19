@@ -184,6 +184,23 @@ export def AutoPairsInsert(key: string): string
     return key
 enddef
 
+
+def ExpandMap(_map: string): string
+  var map = substitute(_map, '\(<Plug>\w\+\)', '\=maparg(submatch(1), "i")', 'g')
+  return substitute(map, '\(<Plug>([^)]*)\)', '\=maparg(submatch(1), "i")', 'g')
+enddef
+
+export def AutoPairsToggle(): string
+	if b:autopairs_enabled
+		b:autopairs_enabled = 0
+		echo 'AutoPairs Disabled.'
+	else
+		b:autopairs_enabled = 1
+		echo 'AutoPairs Enabled.'
+	endif
+	return ''
+enddef
+
 export def AutoPairsDelete(): string
 	if !b:autopairs_enabled
 		return "\<BS>"
@@ -247,19 +264,6 @@ export def AutoPairsReturn(): string
 	return ''
 enddef
 
-def AutoPairsMap(_key: string)
-	# | is special key which separate map command from text
-	var key: string
-	if _key == '|'
-		key = '<BAR>'
-	else
-		key = _key
-	endif
-	const escaped_key = substitute(key, "'", "''", 'g')
-	# use expr will cause search() doesn't work
-	execute 'inoremap <buffer> <silent> ' .. key .. " <C-R>=autopair#AutoPairsInsert('" .. escaped_key .. "')<CR>"
-enddef
-#
 # Fast wrap the word in brackets
 def AutoPairsFastWrap(): string
 	var c = @"
@@ -313,133 +317,111 @@ export def AutoPairsSpace(): string
 	return "\<SPACE>"
 enddef
 
-# def SortByLength(i1: list<any>, i2: list<any>): number
-	# return len(i2[0]) - len(i1[0])
-# enddef
 
-# export def AutoPairsInit()
-	# b:autopairs_loaded  = 1
-	# if !exists('b:autopairs_enabled')
-		# b:autopairs_enabled = 1
-	# endif
-# 
-	# if !exists('b:AutoPairs')
-		# b:AutoPairs = g:AutoPairsDefaultPairs()
-	# endif
-# 
-	# if !exists('b:AutoPairsMoveCharacter')
-		# b:AutoPairsMoveCharacter = g:AutoPairsMoveCharacter
-	# endif
-# 
-	# b:autopairs_return_pos = 0
-	# b:autopairs_saved_pair = [0, 0]
-	# b:AutoPairsList = []
-# 
-	# # buffer level map pairs keys
-	# # n - do not map the first charactor of closed pair to close key
-	# # m - close key jumps through multi line
-	# # s - close key jumps only in the same line
-	# for [open: string, close: string] in items(b:AutoPairs)
-		# var o = open[-1 : -1]
-		# var c: string = close[0]
-		# var opt = {'mapclose': 1, 'multiline': 1}
-		# opt['key'] = str2nr(c)
-		# if o == c
-			# opt['multiline'] = 0
-		# endif
-		# var m = matchlist(close, '\v(.*)//(.*)$')
-		# if len(m) > 0 
-			# if m[2] =~ 'n'
-				# opt['mapclose'] = 0
-			# endif
-			# if m[2] =~ 'm'
-				# opt['multiline'] = 1
-			# endif
-			# if m[2] =~ 's'
-				# opt['multiline'] = 0
-			# endif
-			# var ks = matchlist(m[2], '\vk(.)')
-			# if len(ks) > 0
-				# opt['key'] = str2nr(ks[1])
-				# c = string(opt['key'])
-			# endif
-			# # close = m[1]
-			# b:AutoPairs[close] = m[1]
-		# endif
-		# call AutoPairsMap(o)
-		# if o != c && c != '' && opt['mapclose']
-			# call AutoPairsMap(c)
-		# endif
-		# b:AutoPairsList += [[open, close, opt]]
-	# endfor
-# 
-	# # sort pairs by length, longer pair should have higher priority
-	# b:AutoPairsList = sort(b:AutoPairsList, "SortByLength")
-# 
-	# for item in b:AutoPairsList
-		# var [open, close, opt] = item
-		# if open == "'" && open == close
-			# item[0] = '\v(^|\W)\zs'''
-		# endif
-	# endfor
-# 
-# 
-	# for key in split(b:AutoPairsMoveCharacter, '\s*')
-		# const escaped_key = substitute(key, "'", "''", 'g')
-		# execute 'inoremap <silent> <buffer> <M-' .. key .. "> <C-R>=AutoPairsMoveCharacter('" .. escaped_key .. "')<CR>"
-	# endfor
-# 
-	# # Still use <buffer> level mapping for <BS> <SPACE>
-	# if g:AutoPairsMapBS
-	# # Use <C-R> instead of <expr> for issue #14 sometimes press BS output strange words
-		# execute 'inoremap <buffer> <silent> <BS> <C-R>=autopair#AutoPairsDelete()<CR>'
-	# endif
-# 
-	# if g:AutoPairsMapCh
-		# execute 'inoremap <buffer> <silent> <C-h> <C-R>=autopair#AutoPairsDelete()<CR>'
-	# endif
-# 
-	# if g:AutoPairsMapSpace
-	# # Try to respect abbreviations on a <SPACE>
-		# var do_abbrev: string
-		# if v:version == 703 && has("patch489") || v:version > 703
-			# do_abbrev = "<C-]>"
-		# else
-			# do_abbrev = ''
-		# endif
-		# execute 'inoremap <buffer> <silent> <SPACE> ' .. do_abbrev .. '<C-R>=autopair#AutoPairsSpace()<CR>'
-	# endif
-# 
-	# if g:AutoPairsShortcutFastWrap != ''
-		# execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutFastWrap .. ' <C-R>=autopair#AutoPairsFastWrap()<CR>'
-	# endif
-# 
-	# if g:AutoPairsShortcutBackInsert != ''
-		# execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutBackInsert .. ' <C-R>=AutoPairsBackInsert()<CR>'
-	# endif
-# 
-	# if g:AutoPairsShortcutToggle != ''
-	# # use <expr> to ensure showing the status when toggle
-		# execute 'inoremap <buffer> <silent> <expr> ' .. g:AutoPairsShortcutToggle .. ' AutoPairsToggle()'
-		# execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutToggle .. ' :call AutoPairsToggle()<CR>'
-	# endif
-# 
-	# if g:AutoPairsShortcutJump != ''
-		# execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' <ESC>:call AutoPairsJump()<CR>a'
-		# execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' :call AutoPairsJump()<CR>'
-	# endif
-# 
-	# if &keymap != ''
-		# var imsearch = &imsearch
-		# var iminsert = &iminsert
-		# var imdisable = &imdisable
-		# execute 'setlocal keymap=' .. &keymap
-		# execute 'setlocal imsearch=' .. imsearch
-		# execute 'setlocal iminsert=' .. iminsert
-		# if imdisable
-			# execute 'setlocal imdisable'
-		# else
-			# execute 'setlocal noimdisable'
-		# endif
-	# endif
-# enddef
+def AutoPairsMap(_key: string)
+	# | is special key which separate map command from text
+	var key: string
+	if _key == '|'
+		key = '<BAR>'
+	else
+		key = _key
+	endif
+	const escaped_key = substitute(key, "'", "''", 'g')
+	# use expr will cause search() doesn't work
+	execute 'inoremap <buffer> <silent> ' .. key .. " <C-R>=autopair#AutoPairsInsert('" .. escaped_key .. "')<CR>"
+enddef
+
+export def AutoPairsInit()
+    b:autopairs_loaded = 1
+    b:autopairs_enabled = get(b:, 'autopairs_enabled', 1)
+    b:AutoPairs = get(b:, 'AutoPairs', autopair#AutoPairsDefaultPairs())
+
+    b:autopairs_return_pos = 0
+    b:autopairs_saved_pair = [0, 0]
+    b:AutoPairsList = []
+
+    for [open, close_full] in items(b:AutoPairs)
+        var o = open[-1 : -1]
+        var close = close_full
+        var opt = {mapclose: 1, multiline: 1, key: ''}
+
+        # Parsing des options //n, //m, //s
+        var m = matchlist(close, '\v(.*)//(.*)$')
+        if !empty(m)
+            close = m[1]
+            if m[2] =~ 'n' | opt.mapclose = 0 | endif
+            if m[2] =~ 'm' | opt.multiline = 1 | endif
+            if m[2] =~ 's' | opt.multiline = 0 | endif
+            var ks = matchlist(m[2], '\vk(.)')
+            opt.key = !empty(ks) ? ks[1] : close[0]
+        else
+            opt.key = close[0]
+        endif
+
+        if o == close | opt.multiline = 0 | endif
+
+        # On appelle AutoPairsMap (à convertir aussi ou intégrer ici)
+        AutoPairsMap(o)
+        if o != opt.key && opt.key != '' && opt.mapclose
+            AutoPairsMap(opt.key)
+        endif
+
+        add(b:AutoPairsList, [open, close, opt])
+    endfor
+
+    # Tri par longueur (plus rapide en Vim9)
+    sort(b:AutoPairsList, (i1, i2) => len(i2[0]) - len(i1[0]))
+
+    # ... suite des mappings (BS, Space, FastWrap) ...
+	for key in split(get(g:, 'AutoPairsMoveCharacter', ''), '\s*')
+		const escaped_key = substitute(key, "'", "''", 'g')
+		execute 'inoremap <silent> <buffer> <M-' .. key .. "> <C-R>=AutoPairsMoveCharacter('" .. escaped_key .. "')<CR>"
+	endfor
+
+	if get(g:, 'AutoPairsMapBS', 0)
+		execute 'inoremap <buffer> <silent> <BS> <C-R>=autopair#AutoPairsDelete()<CR>'
+	endif
+
+	if get(g:, 'AutoPairsMapCh', 0)
+		execute 'inoremap <buffer> <silent> <C-h> <C-R>=autopair#AutoPairsDelete()<CR>'
+	endif
+
+	if get(g:, 'AutoPairsMapSpace', 0)
+		const do_abbrev = "<C-]>"
+		execute 'inoremap <buffer> <silent> <SPACE> ' .. do_abbrev .. '<C-R>=autopair#AutoPairsSpace()<CR>'
+	endif
+
+	if g:AutoPairsShortcutFastWrap != ''
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutFastWrap .. ' <C-R>=AutoPairsFastWrap()<CR>'
+	endif
+
+	if g:AutoPairsShortcutBackInsert != ''
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutBackInsert .. ' <C-R>=AutoPairsBackInsert()<CR>'
+	endif
+
+	if g:AutoPairsShortcutToggle != ''
+	# use <expr> to ensure showing the status when toggle
+		execute 'inoremap <buffer> <silent> <expr> ' .. g:AutoPairsShortcutToggle .. ' AutoPairsToggle()'
+		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutToggle .. ' :call AutoPairsToggle()<CR>'
+	endif
+
+	if g:AutoPairsShortcutJump != ''
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' <ESC>:call AutoPairsJump()<CR>a'
+		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' :call AutoPairsJump()<CR>'
+	endif
+
+	if &keymap != ''
+		var imsearch = &imsearch
+		var iminsert = &iminsert
+		var imdisable = &imdisable
+		execute 'setlocal keymap=' .. &keymap
+		execute 'setlocal imsearch=' .. imsearch
+		execute 'setlocal iminsert=' .. iminsert
+		if imdisable
+			execute 'setlocal imdisable'
+		else
+			execute 'setlocal noimdisable'
+		endif
+	endif
+enddef
+
