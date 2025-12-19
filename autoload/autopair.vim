@@ -20,10 +20,6 @@ def Backspace(s: string): string
 	return repeat("\<BS>", strchars(s))
 enddef
 
-def AutoPairsJump()
-	call search('["\]'')}]','W')
-enddef
-
 # split text to two part
 # returns [orig, text_before_open, open]
 def MatchEnd(text: string, open: string): list<string>
@@ -84,6 +80,10 @@ export def AutoPairsDefaultPairs(): dict<string>
 	endfor
 	b:autopairs_defaultpairs = r
 	return r
+enddef
+
+export def AutoPairsJump()
+	call search('["\]'')}]','W')
 enddef
 
 export def AutoPairsInsert(key: string): string
@@ -185,11 +185,6 @@ export def AutoPairsInsert(key: string): string
 enddef
 
 
-def ExpandMap(_map: string): string
-  var map = substitute(_map, '\(<Plug>\w\+\)', '\=maparg(submatch(1), "i")', 'g')
-  return substitute(map, '\(<Plug>([^)]*)\)', '\=maparg(submatch(1), "i")', 'g')
-enddef
-
 export def AutoPairsToggle(): string
 	if b:autopairs_enabled
 		b:autopairs_enabled = 0
@@ -264,8 +259,21 @@ export def AutoPairsReturn(): string
 	return ''
 enddef
 
+export def AutoPairsMoveCharacter(key: string): string
+	const c = getline(".")[col(".")-1]
+	const escaped_key = substitute(key, "'", "''", 'g')
+	return "\<DEL>\<ESC>:call search(" .. "'" .. escaped_key .. "'" .. ")\<CR>a" .. c .. "\<LEFT>"
+enddef
+
+export def AutoPairsBackInsert()
+	const pair = b:autopairs_saved_pair[0]
+	const pos  = b:autopairs_saved_pair[1]
+	call setpos('.', pos)
+	return pair
+enddef
+
 # Fast wrap the word in brackets
-def AutoPairsFastWrap(): string
+export def AutoPairsFastWrap(): string
 	var c = @"
 	normal! x
 	var [before, after, ig] = Getline()
@@ -317,6 +325,10 @@ export def AutoPairsSpace(): string
 	return "\<SPACE>"
 enddef
 
+def ExpandMap(_map: string): string
+  var map = substitute(_map, '\(<Plug>\w\+\)', '\=maparg(submatch(1), "i")', 'g')
+  return substitute(map, '\(<Plug>([^)]*)\)', '\=maparg(submatch(1), "i")', 'g')
+enddef
 
 def AutoPairsMap(_key: string)
 	# | is special key which separate map command from text
@@ -331,7 +343,7 @@ def AutoPairsMap(_key: string)
 	execute 'inoremap <buffer> <silent> ' .. key .. " <C-R>=autopair#AutoPairsInsert('" .. escaped_key .. "')<CR>"
 enddef
 
-export def AutoPairsInit()
+def AutoPairsInit()
     b:autopairs_loaded = 1
     b:autopairs_enabled = get(b:, 'autopairs_enabled', 1)
     b:AutoPairs = get(b:, 'AutoPairs', autopair#AutoPairsDefaultPairs())
@@ -345,7 +357,6 @@ export def AutoPairsInit()
         var close = close_full
         var opt = {mapclose: 1, multiline: 1, key: ''}
 
-        # Parsing des options //n, //m, //s
         var m = matchlist(close, '\v(.*)//(.*)$')
         if !empty(m)
             close = m[1]
@@ -360,7 +371,6 @@ export def AutoPairsInit()
 
         if o == close | opt.multiline = 0 | endif
 
-        # On appelle AutoPairsMap (à convertir aussi ou intégrer ici)
         AutoPairsMap(o)
         if o != opt.key && opt.key != '' && opt.mapclose
             AutoPairsMap(opt.key)
@@ -369,13 +379,11 @@ export def AutoPairsInit()
         add(b:AutoPairsList, [open, close, opt])
     endfor
 
-    # Tri par longueur (plus rapide en Vim9)
     sort(b:AutoPairsList, (i1, i2) => len(i2[0]) - len(i1[0]))
 
-    # ... suite des mappings (BS, Space, FastWrap) ...
 	for key in split(get(g:, 'AutoPairsMoveCharacter', ''), '\s*')
 		const escaped_key = substitute(key, "'", "''", 'g')
-		execute 'inoremap <silent> <buffer> <M-' .. key .. "> <C-R>=AutoPairsMoveCharacter('" .. escaped_key .. "')<CR>"
+		execute 'inoremap <silent> <buffer> <M-' .. key .. "> <C-R>=autopair#AutoPairsMoveCharacter('" .. escaped_key .. "')<CR>"
 	endfor
 
 	if get(g:, 'AutoPairsMapBS', 0)
@@ -392,22 +400,21 @@ export def AutoPairsInit()
 	endif
 
 	if g:AutoPairsShortcutFastWrap != ''
-		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutFastWrap .. ' <C-R>=AutoPairsFastWrap()<CR>'
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutFastWrap .. ' <C-R>=autopair#AutoPairsFastWrap()<CR>'
 	endif
 
 	if g:AutoPairsShortcutBackInsert != ''
-		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutBackInsert .. ' <C-R>=AutoPairsBackInsert()<CR>'
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutBackInsert .. ' <C-R>=autopair#AutoPairsBackInsert()<CR>'
 	endif
 
 	if g:AutoPairsShortcutToggle != ''
-	# use <expr> to ensure showing the status when toggle
 		execute 'inoremap <buffer> <silent> <expr> ' .. g:AutoPairsShortcutToggle .. ' AutoPairsToggle()'
-		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutToggle .. ' :call AutoPairsToggle()<CR>'
+		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutToggle .. ' :call autopair#AutoPairsToggle()<CR>'
 	endif
 
 	if g:AutoPairsShortcutJump != ''
-		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' <ESC>:call AutoPairsJump()<CR>a'
-		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' :call AutoPairsJump()<CR>'
+		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' <ESC>:call autopair#AutoPairsJump()<CR>a'
+		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutJump .. ' :call autopair#AutoPairsJump()<CR>'
 	endif
 
 	if &keymap != ''
@@ -425,3 +432,36 @@ export def AutoPairsInit()
 	endif
 enddef
 
+export def AutoPairsTryInit()
+    if exists('b:autopairs_loaded') | return | endif
+
+    if get(g:, 'AutoPairsMapCR', 1)
+        var info = maparg('<CR>', 'i', 0, 1)
+        var old_cr = ''
+        var is_expr = false
+
+        if empty(info)
+            old_cr = '<CR>'
+        else
+            old_cr = info.rhs
+            old_cr = ExpandMap(old_cr)
+            
+            if has_key(info, 'sid')
+                old_cr = substitute(old_cr, '<SID>', '<SNR>' .. info.sid .. '_', 'g')
+            endif
+            is_expr = info.expr
+        endif
+
+        if old_cr !~ 'AutoPairsReturn'
+            if is_expr
+                var wrapper_name = '<Plug>AutoPairsOldCRWrapper'
+                execute 'inoremap <buffer> <expr> <script> ' .. wrapper_name .. ' ' .. old_cr
+                old_cr = wrapper_name
+            endif
+
+            execute 'inoremap <script> <buffer> <silent> <CR> ' .. old_cr .. '<C-R>=autopair#AutoPairsReturn()<CR>'
+        endif
+    endif
+
+    AutoPairsInit()
+enddef
