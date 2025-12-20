@@ -133,7 +133,7 @@ add **let ** .vimrc to turn it on
 
 Default Options:
 
-    let g:AutoPairsFlyMode = 0
+    let g:AutoPairsFlyMode = false
     let g:AutoPairsShortcutBackInsert = '<M-b>'
 
 Shortcuts
@@ -164,7 +164,7 @@ Options
 -------
 *   g:AutoPairsEnabled
 
-        Default: 1
+        Default: true 
 
         Load AutoPairs when opening the vim
 
@@ -194,47 +194,47 @@ Options
 
 *   g:AutoPairsMapBS
 
-        Default : 1
+        Default : true 
 
         Map <BS> to delete brackets, quotes in pair
         execute 'inoremap <buffer> <silent> <BS> <C-R>=AutoPairsDelete()<CR>'
 
 *   g:AutoPairsMapCh
 
-        Default : 1
+        Default : true
 
         Map <C-h> to delete brackets, quotes in pair
 
 *   g:AutoPairsMapCR
 
-        Default : 1
+        Default : true
 
         Map <CR> to insert a new indented line if cursor in (|), {|} [|], '|', "|"
         execute 'inoremap <buffer> <silent> <CR> <C-R>=AutoPairsReturn()<CR>'
 
 *   g:AutoPairsCenterLine
 
-        Default : 1
+        Default : true
 
         When g:AutoPairsMapCR is on, center current line after return if the line is at the bottom 1/3 of the window.
 
 *   g:AutoPairsMapSpace
 
-        Default : 1
+        Default : true
 
         Map <space> to insert a space after the opening character and before the closing one.
         execute 'inoremap <buffer> <silent> <CR> <C-R>=AutoPairsSpace()<CR>'
 
 *   g:AutoPairsFlyMode
 
-        Default : 0
+        Default : false
 
         set it to 1 to enable FlyMode.
         see FlyMode section for details.
 
 *   g:AutoPairsMultilineClose
 
-        Default : 1
+        Default : true
 
         When you press the key for the closing pair (e.g. `)`) it jumps past it.
         If set to 1, then it'll jump to the next line, if there is only whitespace.

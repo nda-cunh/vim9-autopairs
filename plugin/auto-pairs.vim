@@ -10,21 +10,21 @@ if exists('g:AutoPairsLoaded') || &cp
 	finish
 endif
 
-g:AutoPairsLoaded = 1
+g:AutoPairsLoaded = true
 
 if !exists('g:AutoPairs')
 	g:AutoPairs = { '(': ')', '[': ']', '{': '}', "'": "'", '"': '"', '```': '```', '"""': '"""', "'''": "'''", '`': '`' }
 endif
 
-g:AutoPairsEnabled = get(g:, 'AutoPairsEnabled', 1)
-g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', 1)
-g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', 1)
+g:AutoPairsEnabled = get(g:, 'AutoPairsEnabled', true)
+g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', true)
+g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', true)
 # Map <C-h> as the same BS
-g:AutoPairsMapCh = get(g:, 'AutoPairsMapCh', 1)
-g:AutoPairsMapCR = get(g:, 'AutoPairsMapCR', 1)
+g:AutoPairsMapCh = get(g:, 'AutoPairsMapCh', true)
+g:AutoPairsMapCR = get(g:, 'AutoPairsMapCR', true)
 g:AutoPairsWildClosedPair = get(g:, 'AutoPairsWildClosedPair', '')
-g:AutoPairsMapSpace = get(g:, 'AutoPairsMapSpace', 1)
-g:AutoPairsCenterLine = get(g:, 'AutoPairsCenterLine', 1)
+g:AutoPairsMapSpace = get(g:, 'AutoPairsMapSpace', true)
+g:AutoPairsCenterLine = get(g:, 'AutoPairsCenterLine', true)
 g:AutoPairsShortcutToggle = get(g:, 'AutoPairsShortcutToggle', '<M-p>')
 g:AutoPairsShortcutFastWrap = get(g:, 'AutoPairsShortcutFastWrap', '<M-e>')
 g:AutoPairsMoveCharacter = get(g:, 'AutoPairsMoveCharacter', "()[]{}\"'")
@@ -32,15 +32,15 @@ g:AutoPairsShortcutJump = get(g:, 'AutoPairsShortcutJump', '<M-n>')
 
 # Fly mode will for closed pair to jump to closed pair instead of insert.
 # also support AutoPairsBackInsert to insert pairs where jumped.
-g:AutoPairsFlyMode = get(g:, 'AutoPairsFlyMode', 0)
+g:AutoPairsFlyMode = get(g:, 'AutoPairsFlyMode', false)
 
 # When skipping the closed pair, look at the current and
 # next line as well.
-g:AutoPairsMultilineClose = get(g:, 'AutoPairsMultilineClose', 1)
+g:AutoPairsMultilineClose = get(g:, 'AutoPairsMultilineClose', true)
 
 # Work with Fly Mode, insert pair where jumped
 g:AutoPairsShortcutBackInsert = get(g:, 'AutoPairsShortcutBackInsert', '<M-b>')
-g:AutoPairsSmartQuotes = get(g:, 'AutoPairsSmartQuotes', 1)
+g:AutoPairsSmartQuotes = get(g:, 'AutoPairsSmartQuotes', true)
 
 # add or delete pairs base on g:AutoPairs
 # AutoPairsDefine(addPairs:dict[, removeOpenPairList:list])
@@ -89,6 +89,6 @@ def g:AutoPairsDisable()
 	endif
 enddef
 
-if g:AutoPairsEnabled == 1
+if g:AutoPairsEnabled == true
 	call g:AutoPairsEnable()
 endif

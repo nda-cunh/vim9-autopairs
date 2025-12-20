@@ -175,7 +175,7 @@ export def AutoPairsInsert(key: string): string
         endif
     endfor
 
-	if get(g:, 'AutoPairsFlyMode', 0) != 0 && key =~ '\v[\}\]\)]'
+	if !!g:AutoPairsFlyMode && key =~ '\v[\}\]\)]'
         if search(key, 'We') > 0
             return "\<Right>"
         endif
@@ -186,18 +186,18 @@ enddef
 
 
 export def AutoPairsToggle(): string
-	if b:autopairs_enabled
-		b:autopairs_enabled = 0
+	if !!b:autopairs_enabled
+		b:autopairs_enabled = false
 		echo 'AutoPairs Disabled.'
 	else
-		b:autopairs_enabled = 1
+		b:autopairs_enabled = true 
 		echo 'AutoPairs Enabled.'
 	endif
 	return ''
 enddef
 
 export def AutoPairsDelete(): string
-	if !b:autopairs_enabled
+	if !!b:autopairs_enabled == false
 		return "\<BS>"
 	endif
 
@@ -221,7 +221,7 @@ export def AutoPairsDelete(): string
 enddef
 
 export def AutoPairsReturn(): string
-	if b:autopairs_enabled == 0
+	if !!b:autopairs_enabled == false
 		return ''
 	endif
 	b:autopairs_return_pos = 0
@@ -304,7 +304,7 @@ export def AutoPairsFastWrap(): string
 enddef
 
 export def AutoPairsSpace(): string
-	if !b:autopairs_enabled
+	if !!b:autopairs_enabled == false
 		return "\<SPACE>"
 	endif
 
@@ -344,8 +344,8 @@ def AutoPairsMap(_key: string)
 enddef
 
 def AutoPairsInit()
-    b:autopairs_loaded = 1
-    b:autopairs_enabled = get(b:, 'autopairs_enabled', 1)
+    b:autopairs_loaded = true
+    b:autopairs_enabled = get(b:, 'autopairs_enabled', true)
     b:AutoPairs = get(b:, 'AutoPairs', autopair#AutoPairsDefaultPairs())
 
     b:autopairs_return_pos = 0
@@ -387,18 +387,9 @@ def AutoPairsInit()
 		execute 'inoremap <silent> <buffer> <M-' .. key .. "> <C-R>=autopair#AutoPairsMoveCharacter('" .. escaped_key .. "')<CR>"
 	endfor
 
-	if get(g:, 'AutoPairsMapBS', 0)
-		execute 'inoremap <buffer> <silent> <BS> <C-R>=autopair#AutoPairsDelete()<CR>'
-	endif
-
-	if get(g:, 'AutoPairsMapCh', 0)
-		execute 'inoremap <buffer> <silent> <C-h> <C-R>=autopair#AutoPairsDelete()<CR>'
-	endif
-
-	if get(g:, 'AutoPairsMapSpace', 0)
-		const do_abbrev = "<C-]>"
-		execute 'inoremap <buffer> <silent> <SPACE> ' .. do_abbrev .. '<C-R>=autopair#AutoPairsSpace()<CR>'
-	endif
+	execute 'inoremap <buffer> <silent> <BS> <C-R>=autopair#AutoPairsDelete()<CR>'
+	execute 'inoremap <buffer> <silent> <C-h> <C-R>=autopair#AutoPairsDelete()<CR>'
+	execute 'inoremap <buffer> <silent> <SPACE> <C-]><C-R>=autopair#AutoPairsSpace()<CR>'
 
 	if g:AutoPairsShortcutFastWrap != ''
 		execute 'inoremap <buffer> <silent> ' .. g:AutoPairsShortcutFastWrap .. ' <C-R>=autopair#AutoPairsFastWrap()<CR>'
@@ -436,7 +427,7 @@ enddef
 export def AutoPairsTryInit()
     if exists('b:autopairs_loaded') | return | endif
 
-    if get(g:, 'AutoPairsMapCR', 1)
+    if !!g:AutoPairsMapCR == true
         var info = maparg('<CR>', 'i', 0, 1)
         var old_cr = ''
         var is_expr = false
