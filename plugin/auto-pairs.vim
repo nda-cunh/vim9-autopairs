@@ -16,6 +16,7 @@ if !exists('g:AutoPairs')
 	g:AutoPairs = { '(': ')', '[': ']', '{': '}', "'": "'", '"': '"', '```': '```', '"""': '"""', "'''": "'''", '`': '`' }
 endif
 
+g:AutoPairsEnabled = get(g:, 'AutoPairsEnabled', 1)
 g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', 1)
 g:AutoPairsMapBS = get(g:, 'AutoPairsMapBS', 1)
 # Map <C-h> as the same BS
@@ -65,7 +66,29 @@ def g:AutoPairsToggle(): string
 	return autopair#AutoPairsToggle()
 enddef
 
-inoremap <silent> <SID>autopair#AutoPairsReturn <C-R>=autopair#AutoPairsReturn()<CR>
-imap <script> <Plug>AutoPairsReturn <SID>autopair#AutoPairsReturn
+# Enable the autocmd to initialize AutoPairs on BufEnter
+def g:AutoPairsEnable()
+	inoremap <silent> <SID>autopair#AutoPairsReturn <C-R>=autopair#AutoPairsReturn()<CR>
+	imap <script> <Plug>AutoPairsReturn <SID>autopair#AutoPairsReturn
+	augroup AutoPairs
+		autocmd!
+		au BufEnter * :call autopair#AutoPairsTryInit()
+	augroup END
+	if !exists('b:autopairs_enabled')
+		call autopair#AutoPairsTryInit()
+	else
+		b:autopairs_enabled = 1
+	endif
+enddef
 
-au BufEnter * :call autopair#AutoPairsTryInit()
+def g:AutoPairsDisable()
+	silent! imapclear <Plug>AutoPairsReturn
+	silent! autocmd! AutoPairs
+	if exists('b:autopairs_enabled')
+		b:autopairs_enabled = 0
+	endif
+enddef
+
+if g:AutoPairsEnabled == 1
+	call g:AutoPairsEnable()
+endif
