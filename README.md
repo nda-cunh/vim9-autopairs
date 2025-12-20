@@ -5,8 +5,6 @@ Insert or delete brackets, parens, quotes in pair.
 Installation
 ------------
 
-* Manual
-  * Copy `plugin/auto-pairs.vim` to `~/.vim/plugin`
 * [Pathogen](https://github.com/tpope/vim-pathogen)
   * `git clone git://github.com/jiangmiao/auto-pairs.git ~/.vim/bundle/auto-pairs`
 * [Vundle](https://github.com/VundleVim/Vundle.vim)
@@ -155,17 +153,24 @@ Shortcuts
 
     to .vimrc, if the key is empty string '', then the shortcut will be disabled.
 
+Functions
+--------
+
+* AutoPairsEnable()  Enable autopairs on all files
+* AutoPairsDisable()  Disable autopairs on all files
+* AutoPairsToggle()  Toggle the autopairs on the buffer (Autopairs need be enable)
+
 Options
 -------
+*   g:AutoPairsEnabled
+
+        Default: 1
+
+        Load AutoPairs when opening the vim
+
 *   g:AutoPairs
 
         Default: {'(':')', '[':']', '{':'}',"'":"'",'"':'"', "`":"`", '```':'```', '"""':'"""', "'''":"'''"}
-
-*   b:AutoPairs
-
-        Default: g:AutoPairs
-
-        Buffer level pairs set.
 
 *   g:AutoPairsShortcutToggle
 
