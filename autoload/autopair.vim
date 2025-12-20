@@ -166,7 +166,12 @@ export def AutoPairsInsert(key: string): string
                     if get(b:, 'autopairs_return_pos', 0) == line('.') && getline('.') =~ '^\s*$'
                         normal! ddk$
                     endif
-                    search(m_after, 'We')
+					if !!g:AutoPairsFlyMode == true
+						search(m_after, 'We')
+					else
+						# insert close pair
+						return close .. Right(close)
+					endif
                     return "\<Right>"
                 else
                     break
@@ -175,10 +180,10 @@ export def AutoPairsInsert(key: string): string
         endif
     endfor
 
-	if !!g:AutoPairsFlyMode && key =~ '\v[\}\]\)]'
-        if search(key, 'We') > 0
-            return "\<Right>"
-        endif
+	if !!g:AutoPairsFlyMode == true && key =~ '\v[\}\]\)]'
+        # if search(key, 'We') > 0
+            # return "\<Right>"
+        # endif
     endif
 
     return key
