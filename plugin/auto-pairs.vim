@@ -1,9 +1,8 @@
 vim9script noclear
-# Insert or delete brackets, parens, quotes in pairs.
+# Inspired of https://github.com/jiangmiao/auto-pairs
 # Maintainer:  nda-cunh <hydraldev@gmail.com> 
-# Original Maintainer JiangMiao <jiangfriend@gmail.com>, camthompson
 # Version: 2.0.0
-# Homepage: http://www.vim.org/scripts/script.php?script_id=3599
+# Homepage: https://github.com/nda-cunh/vim9-autopairs
 # License: MIT
 
 if exists('g:AutoPairsLoaded') || &cp

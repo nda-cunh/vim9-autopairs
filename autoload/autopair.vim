@@ -20,6 +20,28 @@ def Backspace(s: string): string
 	return repeat("\<BS>", strchars(s))
 enddef
 
+def IsInIgnoredSyntax(): bool
+    var col = col('.')
+    var line = line('.')
+    
+    var synId = synID(line, col > 1 ? col - 1 : 1, 1)
+    var name = synIDattr(synId, "name")
+    
+    if name =~? 'Comment'
+        return true
+    endif
+
+    if name =~? 'String'
+        var line_str = getline('.')
+        var before = line_str[col - 3 : col - 2]
+        if before == '""' || before == "''"
+            return false
+        endif
+        return true
+    endif
+    return false
+enddef
+
 # split text to two part
 # returns [orig, text_before_open, open]
 def MatchEnd(text: string, open: string): list<string>
@@ -88,6 +110,10 @@ enddef
 
 export def AutoPairsInsert(key: string): string
     if !get(b:, 'autopairs_enabled', true)
+        return key
+    endif
+
+	if IsInIgnoredSyntax()
         return key
     endif
 
