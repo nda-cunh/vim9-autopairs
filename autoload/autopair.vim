@@ -114,6 +114,10 @@ export def AutoPairsInsert(key: string): string
     endif
 
 	if IsInIgnoredSyntax()
+        if getline('.')[col('.') - 1 : col('.') - 2 + len(key)] ==# key
+                && index(b:AutoPairsList->mapnew((_, v) => v[1]), key) >= 0
+            return Right(key)
+        endif
         return key
     endif
 
