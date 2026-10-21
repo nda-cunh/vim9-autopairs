@@ -31,13 +31,15 @@ for t in "$TESTDIR"/t_*.vim; do
 
 	name=$(basename "$t")
 	run="$SANDBOX/$name"
+	cp "$TESTDIR/helpers.vim" "$SANDBOX/helpers.vim"
 	cat "$t" "$TESTDIR/driver.vim" > "$run"
 	rm -f "$REPORT"
 
 	"$VIM_BIN" -N -i NONE -u NONE --not-a-term \
 		--cmd "set rtp^=$ROOT" \
-		--cmd 'filetype on' \
+		--cmd 'filetype plugin indent on' \
 		--cmd 'syntax enable' \
+		--cmd 'set backspace=indent,eol,start' \
 		--cmd "runtime plugin/auto-pairs.vim" \
 		-c "source $run" -c 'qa!' </dev/null >/dev/null 2>&1 || true
 
