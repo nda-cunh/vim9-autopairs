@@ -24,14 +24,15 @@ def IsInIgnoredSyntax(): bool
     var col = col('.')
     var line = line('.')
     
-    var synId = synID(line, col > 1 ? col - 1 : 1, 1)
-    var name = synIDattr(synId, "name")
-    
-    if name =~? 'Comment'
+    var names = synstack(line, col > 1 ? col - 1 : 1)
+        ->mapnew((_, id) => synIDattr(id, 'name'))
+        ->join(' ')
+
+    if names =~? 'Comment'
         return true
     endif
 
-    if name =~? 'String'
+    if names =~? 'String'
         var line_str = getline('.')
         var before = line_str[col - 3 : col - 2]
         if before == '""' || before == "''"
@@ -125,7 +126,7 @@ export def AutoPairsInsert(key: string): string
 
     var [before, after, afterline] = Getline()
 
-    if !empty(before) && before[-1 : -1] == '\'
+    if len(matchstr(before, '\\*$')) % 2 == 1
         return key
     endif
 
