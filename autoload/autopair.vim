@@ -20,25 +20,39 @@ def Backspace(s: string): string
 	return repeat("\<BS>", strchars(s))
 enddef
 
-def IsInIgnoredSyntax(): bool
+def SynNames(lnum: number, col: number): string
+    return synstack(lnum, col)->mapnew((_, id) => synIDattr(id, 'name'))->join(' ')
+enddef
+
+def IsInIgnoredSyntax(key: string): bool
     var col = col('.')
     var line = line('.')
-    
-    var names = synstack(line, col > 1 ? col - 1 : 1)
-        ->mapnew((_, id) => synIDattr(id, 'name'))
-        ->join(' ')
 
-    if names =~? 'Comment'
-        return true
-    endif
-
-    if names =~? 'String'
-        var line_str = getline('.')
-        var before = line_str[col - 3 : col - 2]
-        if before == '""' || before == "''"
+    var text = strpart(getline('.'), 0, col - 1) .. key
+    for [open, _, _] in b:AutoPairsList
+        if strchars(open) > 1 && open !~ '\\' && !empty(MatchEnd(text, open))
             return false
         endif
-        return true
+    endfor
+
+    var prev = SynNames(line, col > 1 ? col - 1 : 1)
+    var at_eol = col > strlen(getline('.'))
+    var cur = at_eol ? '' : SynNames(line, col)
+
+    if prev =~? 'Comment'
+        return at_eol || cur =~? 'Comment'
+    endif
+
+    if prev =~? 'String'
+        if !at_eol
+            return cur =~? 'String\|Quote'
+        endif
+        var before = strpart(getline('.'), 0, col - 1)
+        var q = before[-1]
+        if q !~ '[''"`]'
+            return true
+        endif
+        return count(substitute(before, '\\.', '', 'g'), q) % 2 == 1
     endif
     return false
 enddef
@@ -106,7 +120,7 @@ export def AutoPairsDefaultPairs(): dict<string>
 enddef
 
 export def AutoPairsJump()
-	call search('["\]'')}]','W')
+	search('["\]'')}]', 'W')
 enddef
 
 export def AutoPairsInsert(key: string): string
@@ -114,7 +128,23 @@ export def AutoPairsInsert(key: string): string
         return key
     endif
 
-	if IsInIgnoredSyntax()
+    var [before, after, afterline] = Getline()
+
+    if len(matchstr(before, '\\*$')) % 2 == 1
+        return key
+    endif
+
+    for [open, close, _] in b:AutoPairsList
+        if strchars(close) < 2 || open ==# close | continue | endif
+        for i in range(strchars(close))
+            var rest = strcharpart(close, i)
+            if strcharpart(rest, 0, 1) ==# key && stridx(afterline, rest) == 0
+                return Right(key)
+            endif
+        endfor
+    endfor
+
+	if IsInIgnoredSyntax(key)
         if getline('.')[col('.') - 1 : col('.') - 2 + len(key)] ==# key
                 && index(b:AutoPairsList->mapnew((_, v) => v[1]), key) >= 0
             return Right(key)
@@ -124,9 +154,8 @@ export def AutoPairsInsert(key: string): string
 
     b:autopairs_saved_pair = [key, getpos('.')]
 
-    var [before, after, afterline] = Getline()
-
-    if len(matchstr(before, '\\*$')) % 2 == 1
+    if key =~ '^[''"`]$' && before =~ '[''"`]$'
+            && afterline[0] ==# before[-1] && before[-1] !=# key
         return key
     endif
 
@@ -139,6 +168,10 @@ export def AutoPairsInsert(key: string): string
             var openPair = ms[2]
 
             if strchars(openPair) == 1 && m == openPair
+                break
+            endif
+
+            if open ==# close && stridx(afterline, key) == 0
                 break
             endif
 
@@ -180,6 +213,7 @@ export def AutoPairsInsert(key: string): string
     for [open, close, opt_any] in b:AutoPairsList
         var opt: dict<any> = opt_any
         if empty(close) | continue | endif
+        if open ==# close && strchars(close) > 1 | continue | endif
 
         if key == get(g:, 'AutoPairsWildClosedPair', '') || (opt.mapclose && opt.key == key)
             var m = matchstr(afterline, '^\v\s*\V' .. close)
@@ -412,6 +446,13 @@ def AutoPairsInit()
         if o != opt.key && opt.key != '' && opt.mapclose
             AutoPairsMap(opt.key)
         endif
+        if opt.mapclose && open !=# close
+            for c in split(close, '\zs')[1 :]
+                if c != o && c != opt.key
+                    AutoPairsMap(c)
+                endif
+            endfor
+        endif
 
         add(b:AutoPairsList, [open, close, opt])
     endfor
@@ -436,7 +477,7 @@ def AutoPairsInit()
 	endif
 
 	if g:AutoPairsShortcutToggle != ''
-		execute 'inoremap <buffer> <silent> <expr> ' .. g:AutoPairsShortcutToggle .. ' AutoPairsToggle()'
+		execute 'inoremap <buffer> <silent> <expr> ' .. g:AutoPairsShortcutToggle .. ' autopair#AutoPairsToggle()'
 		execute 'noremap <buffer> <silent> ' .. g:AutoPairsShortcutToggle .. ' :call autopair#AutoPairsToggle()<CR>'
 	endif
 
@@ -482,7 +523,7 @@ export def AutoPairsTryInit()
 
         if old_cr !~ 'AutoPairsReturn'
             if is_expr
-                var wrapper_name = '<Plug>AutoPairsOldCRWrapper'
+                var wrapper_name = '<SID>AutoPairsOldCRWrapper'
                 execute 'inoremap <buffer> <expr> <script> ' .. wrapper_name .. ' ' .. old_cr
                 old_cr = wrapper_name
             endif
